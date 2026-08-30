@@ -1,0 +1,34 @@
+name: astrbot_plugin_xiaohongshu
+display_name: 小红书 Bot
+author: 黯渊
+desc: 小红书搜索/笔记/评论/点赞/收藏/关注/浏览养号 + WUI 内嵌远程浏览器（真浏览器实时画面，点击拖动过验证，自动抓 Cookie，扫码登录/Cookie 双通道）+ Cookie 自动续期/掉线通知 + 浏览器依赖自动安装
+version: 0.1.0
+repo: ""
+help: |
+  基于 Playwright 无头浏览器的小红书插件，扫码登录一次后登录态持久化。
+  支持搜索笔记、查看笔记详情、抓取评论、点赞/收藏/评论/关注、浏览推荐流养号。
+
+  指令：
+  - /小红书登录   生成扫码登录二维码（发到当前聊天）
+  - /小红书状态   查看登录态和浏览器状态
+  - /小红书退出   清除登录态
+  - /小红书搜索 <关键词> [数量]   搜索小红书笔记
+  - /小红书笔记 <链接>   查看笔记详情
+  - /小红书评论 <链接> [数量]   抓取笔记热门评论
+  - /小红书点赞 <链接>   点赞笔记
+  - /小红书收藏 <链接>   收藏笔记
+  - /小红书评 <链接> <内容>   评论笔记
+  - /小红书关注 <链接>   关注用户
+  - /小红书浏览 [轮数]   浏览推荐流（养号）
+
+  WebUI（AstrBot 面板 -> 插件 -> 小红书 Bot）：
+  - 远程登录面板：真浏览器实时画面，可手动点击/拖动/输入，扫码或 Cookie 登录
+  - 状态/配置/搜索/笔记/评论/点赞/收藏/评论/关注操作
+
+  配置项（插件设置里填写）：
+  - auto_start：插件加载后自动启动浏览器，默认 true
+  - cookie_auto_refresh / cookie_refresh_interval：Cookie 自动续期，默认开/1小时
+  - offline_notify / notify_target：掉线自动通知，默认开（需填通知目标）
+  - offline_relogin：掉线自动重连，默认开
+  - nurture_enabled / nurture_rounds / nurture_wait：浏览养号参数
+  - nurture_like_prob / nurture_collect_prob：浏览时随机点赞/收藏概率

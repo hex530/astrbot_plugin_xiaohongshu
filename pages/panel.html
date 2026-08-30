@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>抖音远程登录面板</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #0d0d0d;
+    color: #e8e8e8;
+    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+    min-height: 100vh;
+  }
+  .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
+  header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 4px 14px; border-bottom: 1px solid #222; margin-bottom: 14px;
+  }
+  header h1 { font-size: 17px; color: #fff; font-weight: 600; }
+  header h1 span { color: #25f4ee; }
+  .badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .badge {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    background: #1a1a1a; border: 1px solid #2e2e2e; color: #aaa;
+  }
+  .badge.ok { color: #25f4ee; border-color: #25f4ee33; background: #25f4ee11; }
+  .badge.err { color: #ff5c5c; border-color: #ff5c5c33; background: #ff5c5c11; }
+  .badge.warn { color: #ffb545; border-color: #ffb54533; background: #ffb54511; }
+  .badge.go-console {
+    color: #25f4ee; border-color: #25f4ee66; background: #25f4ee22;
+    text-decoration: none; font-weight: 600; cursor: pointer;
+    transition: background .15s;
+  }
+  .badge.go-console:hover { background: #25f4ee33; }
+  .badge.go-console:active { opacity: 0.7; }
+
+  .stage {
+    background: #111; border: 1px solid #222; border-radius: 12px;
+    overflow: hidden; position: relative;
+  }
+  .stage .screen {
+    width: 100%; display: block; min-height: 300px; background: #000;
+    object-fit: contain;
+  }
+  .stage .ph {
+    min-height: 300px; display: flex; align-items: center; justify-content: center;
+    color: #555; font-size: 14px; flex-direction: column; gap: 8px;
+  }
+  .stage .ph .dot { width: 10px; height: 10px; border-radius: 50%; background: #25f4ee; animation: blink 1.2s infinite; }
+  @keyframes blink { 50% { opacity: 0.2; } }
+  .stage .corner {
+    position: absolute; top: 10px; right: 10px;
+    background: rgba(0,0,0,0.72); border: 1px solid #333; border-radius: 8px;
+    font-size: 12px; color: #aaa; padding: 5px 10px; backdrop-filter: blur(4px);
+  }
+  .toast {
+    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
+    background: #1c1c1c; border: 1px solid #25f4ee55; color: #25f4ee;
+    padding: 10px 20px; border-radius: 10px; font-size: 14px; z-index: 99;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: none;
+  }
+  .toast.show { display: block; animation: fadein .25s; }
+  @keyframes fadein { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
+
+  .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
+  .card {
+    background: #111; border: 1px solid #222; border-radius: 12px; padding: 14px;
+  }
+  .card h2 { font-size: 14px; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+  .card h2 em { font-style: normal; color: #25f4ee; }
+  .btn {
+    display: inline-block; background: #25f4ee; color: #000; border: none;
+    padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
+    cursor: pointer; transition: opacity .15s;
+  }
+  .btn:active { opacity: 0.7; }
+  .btn.ghost { background: #1a1a1a; color: #ccc; border: 1px solid #2e2e2e; }
+  .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .tip { font-size: 12px; color: #666; margin-top: 8px; line-height: 1.6; }
+  .tip b { color: #999; }
+  textarea {
+    width: 100%; height: 90px; background: #0a0a0a; border: 1px solid #2e2e2e;
+    border-radius: 8px; color: #e8e8e8; font-size: 12px; padding: 10px;
+    resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.5;
+  }
+  textarea:focus { outline: none; border-color: #25f4ee66; }
+  .row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
+  .status-line { font-size: 12px; color: #666; margin-top: 10px; line-height: 1.7; }
+  .status-line b { color: #ccc; font-weight: 500; }
+
+  @media (max-width: 720px) {
+    .tools { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>抖音远程登录面板 <span>·</span> 内置浏览器直连</h1>
+    <div class="badges">
+      <span class="badge" id="bAuth">登录态检测中</span>
+      <span class="badge" id="bBrw">浏览器检测中</span>
+      <a class="badge go-console" id="goConsole" href="./console#browser">进入完整浏览器面板 →</a>
+    </div>
+  </header>
+
+  <div class="stage">
+    <div class="ph" id="ph"><span class="dot"></span><span>正在连接服务器浏览器…</span></div>
+    <img id="screen" class="screen" style="display:none" alt="实时画面">
+    <div class="corner" id="corner">画面刷新中</div>
+  </div>
+
+  <div class="tools">
+    <div class="card">
+      <h2><em>①</em> 扫码登录</h2>
+      <div class="row">
+        <button class="btn" id="btnOpen">打开抖音登录页</button>
+        <button class="btn ghost" id="btnRefresh">刷新画面</button>
+      </div>
+      <div class="tip">
+        点击后服务器内置浏览器会打开抖音登录页，画面实时显示在左侧。<br>
+        <b>用抖音 App 扫码</b>，成功后登录态自动落盘，无需任何额外操作。<br>
+        若页面弹出滑块/字元验证（机房 IP 风控），<b><a href="./console#browser" style="color:#25f4ee">进入完整浏览器面板</a></b> 可直接在画面上触摸/拖动操作验证——画面是真实浏览器的实时画面。
+      </div>
+    </div>
+
+    <div class="card">
+      <h2><em>②</em> Cookie 导入（备用通道）</h2>
+      <textarea id="cookieBox" placeholder="粘贴浏览器 Cookie，例如：sessionid=xxx; passport_csrf_token=yyy; ..."></textarea>
+      <div class="row">
+        <button class="btn" id="btnCookie">注入 Cookie 登录</button>
+      </div>
+      <div class="tip">
+        从电脑/手机浏览器登录抖音网页版后，在开发者工具 Console 执行 <b>document.cookie</b> 复制全部内容粘贴到这里。<br>
+        注：HttpOnly 字段（如 sessionid）用 document.cookie 拿不全，优先用扫码通道。
+      </div>
+    </div>
+  </div>
+
+  <div class="status-line" id="statusLine">等待连接…</div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  var base = location.pathname.replace(/\/panel$/, "");
+  var $ = function (id) { return document.getElementById(id); };
+  var img = $("screen"), ph = $("ph"), corner = $("corner");
+  var toastTimer = null;
+
+  function toast(msg, ok) {
+    var t = $("toast");
+    t.textContent = msg;
+    t.style.borderColor = ok === false ? "#ff5c5c55" : "#25f4ee55";
+    t.style.color = ok === false ? "#ff5c5c" : "#25f4ee";
+    t.classList.add("show");
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+  }
+
+  async function api(path, opts) {
+    var res = await fetch(base + path, opts);
+    return await res.json().catch(function () { return {}; });
+  }
+
+  var lastTs = 0, failCnt = 0;
+  async function refreshShot(manual) {
+    try {
+      var r = await api("/screenshot");
+      if (r.ok && r.image) {
+        var ts = r.ts || 0;
+        if (ts >= lastTs || manual) {
+          lastTs = ts;
+          img.src = "data:image/jpeg;base64," + r.image;
+          if (img.style.display === "none") {
+            img.style.display = "block";
+            ph.style.display = "none";
+          }
+          corner.textContent = "画面已更新 " + new Date().toLocaleTimeString();
+        }
+        failCnt = 0;
+      } else {
+        failCnt++;
+        if (failCnt > 2) corner.textContent = "浏览器未启动，点「打开抖音登录页」";
+      }
+    } catch (e) {
+      failCnt++;
+      corner.textContent = "连接异常，重试中…";
+    }
+  }
+
+  var authed = false, brwStarted = false;
+  async function pollStatus() {
+    try {
+      var r = await api("/status");
+      authed = !!r.authenticated;
+      brwStarted = !!r.browser_started;
+      var ba = $("bAuth"), bb = $("bBrw");
+      ba.className = "badge " + (authed ? "ok" : "err");
+      ba.textContent = authed ? "已登录" : "未登录";
+      bb.className = "badge " + (brwStarted ? "ok" : "warn");
+      bb.textContent = brwStarted ? "浏览器在线" : "浏览器未启动";
+      if (authed) {
+        $("statusLine").innerHTML = "✅ <b>登录成功</b> · 登录态已保存 · 监听任务运行中，可以关闭本页面";
+        toast("登录成功，登录态已保存", true);
+      } else {
+        $("statusLine").innerHTML =
+          "浏览器：" + (brwStarted ? "在线" : "未启动") +
+          " · 登录态：未登录 · 建议先点「打开抖音登录页」" +
+          (brwStarted ? "" : "，等待浏览器启动后画面会自动出现");
+      }
+    } catch (e) {
+      $("statusLine").textContent = "状态接口连接失败，检查 AstrBot 是否在线";
+    }
+  }
+
+  $("btnOpen").addEventListener("click", function () {
+    var b = this; b.disabled = true; b.textContent = "正在打开…";
+    api("/open_login").then(function (r) {
+      toast(r.ok ? "已打开抖音登录页，画面即将更新" : (r.message || "打开失败"), !!r.ok);
+      setTimeout(function () { refreshShot(true); }, 1500);
+    }).catch(function () {
+      toast("请求失败", false);
+    }).finally(function () {
+      b.disabled = false; b.textContent = "打开抖音登录页";
+    });
+  });
+
+  $("btnRefresh").addEventListener("click", function () {
+    refreshShot(true);
+  });
+
+  $("btnCookie").addEventListener("click", function () {
+    var cookie = $("cookieBox").value.trim();
+    if (!cookie) { toast("先粘贴 Cookie 再注入", false); return; }
+    var b = this; b.disabled = true; b.textContent = "注入中…";
+    api("/cookie_login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cookie: cookie })
+    }).then(function (r) {
+      toast(r.ok ? ("注入成功：" + (r.message || "")) : (r.message || "注入失败"), !!r.ok);
+      if (r.ok) { $("cookieBox").value = ""; setTimeout(pollStatus, 2000); }
+    }).catch(function () {
+      toast("请求失败", false);
+    }).finally(function () {
+      b.disabled = false; b.textContent = "注入 Cookie 登录";
+    });
+  });
+
+  setInterval(function () { refreshShot(false); }, 2000);
+  setInterval(pollStatus, 4000);
+  pollStatus();
+  refreshShot(false);
+})();
+</script>
+</body>
+</html>

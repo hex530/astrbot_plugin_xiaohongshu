@@ -1,0 +1,68 @@
+{
+  "auto_start": {
+    "description": "插件加载后自动启动浏览器（无需手动发指令）",
+    "type": "bool",
+    "default": true,
+    "hint": "若未登录会自动等待扫码"
+  },
+  "cookie_auto_refresh": {
+    "description": "Cookie 自动续期：后台定时刷新登录态，防止过期掉线",
+    "type": "bool",
+    "default": true,
+    "hint": "建议开启，长时间使用不掉线"
+  },
+  "cookie_refresh_interval": {
+    "description": "Cookie 自动续期间隔（秒），默认 3600（1小时）",
+    "type": "int",
+    "default": 3600,
+    "hint": "最小 300 秒"
+  },
+  "offline_notify": {
+    "description": "掉线自动通知：登录失效时向指定目标发送提醒",
+    "type": "bool",
+    "default": true,
+    "hint": "需在下方填写通知目标"
+  },
+  "offline_relogin": {
+    "description": "掉线自动重连：检测到登录失效时自动尝试恢复会话",
+    "type": "bool",
+    "default": true,
+    "hint": "自动恢复失败时仍需手动扫码"
+  },
+  "notify_target": {
+    "description": "通知目标：格式 平台:标识，例如 qq:123456 或 wxid:xxx",
+    "type": "string",
+    "default": "",
+    "hint": "留空则不发送通知"
+  },
+  "nurture_enabled": {
+    "description": "启用浏览养号：定时浏览推荐流模拟真人行为",
+    "type": "bool",
+    "default": true,
+    "hint": "降低账号被风控概率"
+  },
+  "nurture_rounds": {
+    "description": "单次养号浏览轮数",
+    "type": "int",
+    "default": 5,
+    "hint": "每轮随机滚动并停留"
+  },
+  "nurture_wait": {
+    "description": "每轮浏览停留时间（秒）",
+    "type": "int",
+    "default": 6,
+    "hint": "模拟真人阅读速度"
+  },
+  "nurture_like_prob": {
+    "description": "浏览时随机点赞概率（0-1）",
+    "type": "float",
+    "default": 0.2,
+    "hint": "0.2 表示约 20% 概率点赞"
+  },
+  "nurture_collect_prob": {
+    "description": "浏览时随机收藏概率（0-1）",
+    "type": "float",
+    "default": 0.15,
+    "hint": "0.15 表示约 15% 概率收藏"
+  }
+}
