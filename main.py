@@ -757,7 +757,7 @@ class XiaohongshuPlugin(Star):
     async def _serve_panel(self):
         """远程登录面板页面。"""
         from starlette.responses import Response
-        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pages", "panel.html")
+        path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pages", "console", "index.html")
         if os.path.exists(path):
             with open(path, encoding="utf-8") as f:
                 return Response(content=f.read(), media_type="text/html", headers={"Cache-Control": "no-store, max-age=0"})

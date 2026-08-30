@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>抖音远程登录面板</title>
+<title>小红书远程登录面板</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body {
@@ -97,7 +97,7 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>抖音远程登录面板 <span>·</span> 内置浏览器直连</h1>
+    <h1>小红书远程登录面板 <span>·</span> 内置浏览器直连</h1>
     <div class="badges">
       <span class="badge" id="bAuth">登录态检测中</span>
       <span class="badge" id="bBrw">浏览器检测中</span>
@@ -115,12 +115,12 @@
     <div class="card">
       <h2><em>①</em> 扫码登录</h2>
       <div class="row">
-        <button class="btn" id="btnOpen">打开抖音登录页</button>
+        <button class="btn" id="btnOpen">打开小红书登录页</button>
         <button class="btn ghost" id="btnRefresh">刷新画面</button>
       </div>
       <div class="tip">
-        点击后服务器内置浏览器会打开抖音登录页，画面实时显示在左侧。<br>
-        <b>用抖音 App 扫码</b>，成功后登录态自动落盘，无需任何额外操作。<br>
+        点击后服务器内置浏览器会打开小红书登录页，画面实时显示在左侧。<br>
+        <b>用小红书 App 扫码</b>，成功后登录态自动落盘，无需任何额外操作。<br>
         若页面弹出滑块/字元验证（机房 IP 风控），<b><a href="./console#browser" style="color:#25f4ee">进入完整浏览器面板</a></b> 可直接在画面上触摸/拖动操作验证——画面是真实浏览器的实时画面。
       </div>
     </div>
@@ -132,24 +132,76 @@
         <button class="btn" id="btnCookie">注入 Cookie 登录</button>
       </div>
       <div class="tip">
-        从电脑/手机浏览器登录抖音网页版后，在开发者工具 Console 执行 <b>document.cookie</b> 复制全部内容粘贴到这里。<br>
+        从电脑/手机浏览器登录小红书网页版后，在开发者工具 Console 执行 <b>document.cookie</b> 复制全部内容粘贴到这里。<br>
         注：HttpOnly 字段（如 sessionid）用 document.cookie 拿不全，优先用扫码通道。
       </div>
     </div>
   </div>
 
   <div class="status-line" id="statusLine">等待连接…</div>
+<div class="status-line" id="depsLine" style="color:#ffb020">检测浏览器依赖…</div>
 </div>
 
 <div class="toast" id="toast"></div>
 
 <script>
 (function () {
-  var base = location.pathname.replace(/\/panel$/, "");
+  const API = "/api/plug/astrbot_plugin_xiaohongshu";
   var $ = function (id) { return document.getElementById(id); };
+  // AstrBot 面板用 sandbox iframe 打开插件页（缺 allow-same-origin）：
+  // fetch 被 CORS 拦截、localStorage 抛 SecurityError，唯一可靠通道是父窗口 bridge。
+  function getBridge(timeoutMs) {
+    return new Promise(function (resolve) {
+      var b = window.AstrBotPluginPage;
+      if (b) { resolve(b); return; }
+      var deadline = Date.now() + (timeoutMs || 4000);
+      var timer = setInterval(function () {
+        var bb = window.AstrBotPluginPage;
+        if (bb || Date.now() > deadline) {
+          clearInterval(timer);
+          resolve(bb || null);
+        }
+      }, 100);
+    });
+  }
+  function fetchFallback(path, options) {
+    try {
+      return fetch(API + path, options).then(function (r) { return r.json().catch(function () { return {}; }); });
+    } catch (e) {
+      return Promise.resolve({});
+    }
+  }
+  async function api(path, options) {
+    options = options || {};
+    var method = (options.method || "GET").toUpperCase();
+    var qi = path.indexOf("?");
+    var rawPath = qi !== -1 ? path.substring(0, qi) : path;
+    var cleanPath = rawPath.replace(/^\/+/, "");
+    var query = qi !== -1 ? path.substring(qi + 1) : "";
+    var bridge = await getBridge(3000);
+    if (bridge && typeof bridge.apiGet === "function") {
+      try {
+        var data;
+        if (method === "POST") {
+          var body = {};
+          try { body = options.body ? JSON.parse(options.body) : {}; } catch (e) { body = {}; }
+          data = await bridge.apiPost(cleanPath, body);
+        } else {
+          var params = {};
+          if (query) new URLSearchParams(query).forEach(function (v, k) { params[k] = v; });
+          data = await bridge.apiGet(cleanPath, params);
+        }
+        return data || {};
+      } catch (e) {
+        if (!window.self || window.self === window.top) return fetchFallback(path, options);
+        return {};
+      }
+    }
+    return fetchFallback(path, options);
+  }
+
   var img = $("screen"), ph = $("ph"), corner = $("corner");
   var toastTimer = null;
-
   function toast(msg, ok) {
     var t = $("toast");
     t.textContent = msg;
@@ -159,12 +211,6 @@
     clearTimeout(toastTimer);
     toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
   }
-
-  async function api(path, opts) {
-    var res = await fetch(base + path, opts);
-    return await res.json().catch(function () { return {}; });
-  }
-
   var lastTs = 0, failCnt = 0;
   async function refreshShot(manual) {
     try {
@@ -183,14 +229,13 @@
         failCnt = 0;
       } else {
         failCnt++;
-        if (failCnt > 2) corner.textContent = "浏览器未启动，点「打开抖音登录页」";
+        if (failCnt > 2) corner.textContent = "浏览器未启动，点「打开登录页」或先安装依赖";
       }
     } catch (e) {
       failCnt++;
       corner.textContent = "连接异常，重试中…";
     }
   }
-
   var authed = false, brwStarted = false;
   async function pollStatus() {
     try {
@@ -208,30 +253,49 @@
       } else {
         $("statusLine").innerHTML =
           "浏览器：" + (brwStarted ? "在线" : "未启动") +
-          " · 登录态：未登录 · 建议先点「打开抖音登录页」" +
+          " · 登录态：未登录 · 建议先点「打开登录页」" +
           (brwStarted ? "" : "，等待浏览器启动后画面会自动出现");
       }
     } catch (e) {
       $("statusLine").textContent = "状态接口连接失败，检查 AstrBot 是否在线";
     }
   }
-
+  async function refreshDeps() {
+    try {
+      var r = await api("/deps");
+      var el = $("depsLine");
+      if (!el) return;
+      if (r.ok) {
+        el.innerHTML = "✅ 浏览器依赖就绪（Playwright ✓ Chromium ✓）";
+        el.style.color = "#25f4ee";
+      } else {
+        el.innerHTML = "⚠️ 浏览器依赖缺失：" + (r.detail || "") + " <button class=\"btn\" id=\"btnDeps\">自动安装</button>";
+        el.style.color = "#ffb020";
+        var b = $("btnDeps");
+        if (b) b.addEventListener("click", function () {
+          var bb = this; bb.disabled = true; bb.textContent = "安装中…";
+          api("/deps", { method: "POST" }).then(function (rr) {
+            toast(rr.ok ? "依赖安装已启动，安装完成后会自动启动浏览器" : (rr.message || "启动失败"), !!rr.ok);
+            setTimeout(refreshDeps, 15000);
+          }).finally(function () { bb.disabled = false; bb.textContent = "自动安装"; });
+        });
+      }
+    } catch (e) {}
+  }
   $("btnOpen").addEventListener("click", function () {
     var b = this; b.disabled = true; b.textContent = "正在打开…";
     api("/open_login").then(function (r) {
-      toast(r.ok ? "已打开抖音登录页，画面即将更新" : (r.message || "打开失败"), !!r.ok);
+      toast(r.ok ? "已打开登录页，画面即将更新" : (r.message || "打开失败"), !!r.ok);
       setTimeout(function () { refreshShot(true); }, 1500);
     }).catch(function () {
       toast("请求失败", false);
     }).finally(function () {
-      b.disabled = false; b.textContent = "打开抖音登录页";
+      b.disabled = false; b.textContent = "打开登录页";
     });
   });
-
   $("btnRefresh").addEventListener("click", function () {
     refreshShot(true);
   });
-
   $("btnCookie").addEventListener("click", function () {
     var cookie = $("cookieBox").value.trim();
     if (!cookie) { toast("先粘贴 Cookie 再注入", false); return; }
@@ -249,11 +313,11 @@
       b.disabled = false; b.textContent = "注入 Cookie 登录";
     });
   });
-
   setInterval(function () { refreshShot(false); }, 2000);
   setInterval(pollStatus, 4000);
   pollStatus();
   refreshShot(false);
+  refreshDeps();
 })();
 </script>
 </body>
