@@ -6,98 +6,62 @@
 <title>小红书远程登录面板</title>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body {
-    background: #0d0d0d;
-    color: #e8e8e8;
-    font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
-    min-height: 100vh;
-  }
+  body { background: #0d0d0d; color: #e8e8e8; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif; min-height: 100vh; }
   .wrap { max-width: 1100px; margin: 0 auto; padding: 16px; }
-  header {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 10px 4px 14px; border-bottom: 1px solid #222; margin-bottom: 14px;
-  }
+  header { display: flex; align-items: center; justify-content: space-between; padding: 10px 4px 14px; border-bottom: 1px solid #222; margin-bottom: 14px; flex-wrap: wrap; gap: 8px; }
   header h1 { font-size: 17px; color: #fff; font-weight: 600; }
-  header h1 span { color: #25f4ee; }
+  header h1 span { color: #ff2442; }
   .badges { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .badge {
-    font-size: 12px; padding: 4px 10px; border-radius: 999px;
-    background: #1a1a1a; border: 1px solid #2e2e2e; color: #aaa;
-  }
+  .badge { font-size: 12px; padding: 4px 10px; border-radius: 999px; background: #1a1a1a; border: 1px solid #2e2e2e; color: #aaa; }
   .badge.ok { color: #25f4ee; border-color: #25f4ee33; background: #25f4ee11; }
   .badge.err { color: #ff5c5c; border-color: #ff5c5c33; background: #ff5c5c11; }
   .badge.warn { color: #ffb545; border-color: #ffb54533; background: #ffb54511; }
-  .badge.go-console {
-    color: #25f4ee; border-color: #25f4ee66; background: #25f4ee22;
-    text-decoration: none; font-weight: 600; cursor: pointer;
-    transition: background .15s;
-  }
+  .badge.go-console { color: #25f4ee; border-color: #25f4ee66; background: #25f4ee22; text-decoration: none; font-weight: 600; cursor: pointer; transition: background .15s; }
   .badge.go-console:hover { background: #25f4ee33; }
-  .badge.go-console:active { opacity: 0.7; }
-
-  .stage {
-    background: #111; border: 1px solid #222; border-radius: 12px;
-    overflow: hidden; position: relative;
-  }
-  .stage .screen {
-    width: 100%; display: block; min-height: 300px; background: #000;
-    object-fit: contain;
-  }
-  .stage .ph {
-    min-height: 300px; display: flex; align-items: center; justify-content: center;
-    color: #555; font-size: 14px; flex-direction: column; gap: 8px;
-  }
+  .stage { background: #111; border: 1px solid #222; border-radius: 12px; overflow: hidden; position: relative; }
+  .stage .screen { width: 100%; display: block; min-height: 300px; background: #000; object-fit: contain; }
+  .stage .ph { min-height: 300px; display: flex; align-items: center; justify-content: center; color: #555; font-size: 14px; flex-direction: column; gap: 8px; }
   .stage .ph .dot { width: 10px; height: 10px; border-radius: 50%; background: #25f4ee; animation: blink 1.2s infinite; }
   @keyframes blink { 50% { opacity: 0.2; } }
-  .stage .corner {
-    position: absolute; top: 10px; right: 10px;
-    background: rgba(0,0,0,0.72); border: 1px solid #333; border-radius: 8px;
-    font-size: 12px; color: #aaa; padding: 5px 10px; backdrop-filter: blur(4px);
-  }
-  .toast {
-    position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-    background: #1c1c1c; border: 1px solid #25f4ee55; color: #25f4ee;
-    padding: 10px 20px; border-radius: 10px; font-size: 14px; z-index: 99;
-    box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: none;
-  }
+  .stage .corner { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,0.72); border: 1px solid #333; border-radius: 8px; font-size: 12px; color: #aaa; padding: 5px 10px; backdrop-filter: blur(4px); }
+  .toast { position: fixed; top: 16px; left: 50%; transform: translateX(-50%); background: #1c1c1c; border: 1px solid #25f4ee55; color: #25f4ee; padding: 10px 20px; border-radius: 10px; font-size: 14px; z-index: 99; box-shadow: 0 8px 30px rgba(0,0,0,0.6); display: none; }
   .toast.show { display: block; animation: fadein .25s; }
   @keyframes fadein { from { opacity: 0; transform: translateX(-50%) translateY(-8px); } }
-
   .tools { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 14px; }
-  .card {
-    background: #111; border: 1px solid #222; border-radius: 12px; padding: 14px;
-  }
+  .card { background: #111; border: 1px solid #222; border-radius: 12px; padding: 14px; }
   .card h2 { font-size: 14px; color: #fff; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
-  .card h2 em { font-style: normal; color: #25f4ee; }
-  .btn {
-    display: inline-block; background: #25f4ee; color: #000; border: none;
-    padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600;
-    cursor: pointer; transition: opacity .15s;
-  }
+  .card h2 em { font-style: normal; color: #ff2442; }
+  .btn { display: inline-block; background: #ff2442; color: #fff; border: none; padding: 9px 18px; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; transition: opacity .15s; }
   .btn:active { opacity: 0.7; }
   .btn.ghost { background: #1a1a1a; color: #ccc; border: 1px solid #2e2e2e; }
   .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn.small { padding: 5px 12px; font-size: 12px; border-radius: 6px; }
   .tip { font-size: 12px; color: #666; margin-top: 8px; line-height: 1.6; }
   .tip b { color: #999; }
-  textarea {
-    width: 100%; height: 90px; background: #0a0a0a; border: 1px solid #2e2e2e;
-    border-radius: 8px; color: #e8e8e8; font-size: 12px; padding: 10px;
-    resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.5;
-  }
-  textarea:focus { outline: none; border-color: #25f4ee66; }
+  textarea, input[type="text"], input[type="tel"] { width: 100%; background: #0a0a0a; border: 1px solid #2e2e2e; border-radius: 8px; color: #e8e8e8; font-size: 12px; padding: 10px; font-family: inherit; }
+  textarea { height: 90px; resize: vertical; font-family: ui-monospace, Menlo, Consolas, monospace; line-height: 1.5; }
+  textarea:focus, input:focus { outline: none; border-color: #ff244266; }
   .row { display: flex; gap: 8px; margin-top: 10px; align-items: center; flex-wrap: wrap; }
   .status-line { font-size: 12px; color: #666; margin-top: 10px; line-height: 1.7; }
   .status-line b { color: #ccc; font-weight: 500; }
-
-  @media (max-width: 720px) {
-    .tools { grid-template-columns: 1fr; }
-  }
+  .tabs { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .tab { padding: 7px 14px; border-radius: 8px; font-size: 13px; background: #1a1a1a; border: 1px solid #2e2e2e; color: #aaa; cursor: pointer; transition: all .15s; }
+  .tab.active { background: #ff244222; border-color: #ff2442; color: #ff2442; font-weight: 600; }
+  .step { display: flex; gap: 8px; align-items: flex-start; margin: 8px 0; font-size: 12px; color: #999; line-height: 1.7; }
+  .step b { color: #ff2442; font-weight: 600; }
+  .input-list { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+  .input-item { text-align: left; font-size: 12px; padding: 6px 10px; border-radius: 6px; background: #1a1a1a; border: 1px solid #2e2e2e; color: #ccc; cursor: pointer; transition: border-color .15s; }
+  .input-item:hover { border-color: #ff2442; }
+  .input-item.sel { border-color: #25f4ee; color: #25f4ee; }
+  .input-item small { color: #666; margin-left: 6px; }
+  .mini { font-size: 11px; color: #666; margin-top: 4px; }
+  @media (max-width: 720px) { .tools { grid-template-columns: 1fr; } }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
-    <h1>小红书远程登录面板 <span>·</span> 内置浏览器直连</h1>
+    <h1>小红书远程登录面板 <span>·</span> 扫码 / 短信验证码 / 微信</h1>
     <div class="badges">
       <span class="badge" id="bAuth">登录态检测中</span>
       <span class="badge" id="bBrw">浏览器检测中</span>
@@ -113,33 +77,74 @@
 
   <div class="tools">
     <div class="card">
-      <h2><em>①</em> 扫码登录</h2>
+      <h2><em>①</em> 登录方式</h2>
+      <div class="tabs">
+        <button class="tab active" data-mode="qr" id="tabQr">App 扫码</button>
+        <button class="tab" data-mode="sms" id="tabSms">手机验证码</button>
+        <button class="tab" data-mode="wechat" id="tabWechat">微信扫码</button>
+      </div>
       <div class="row">
-        <button class="btn" id="btnOpen">打开小红书登录页</button>
+        <button class="btn" id="btnOpen">打开登录页（当前方式）</button>
         <button class="btn ghost" id="btnRefresh">刷新画面</button>
       </div>
-      <div class="tip">
-        点击后服务器内置浏览器会打开小红书登录页，画面实时显示在左侧。<br>
-        <b>用小红书 App 扫码</b>，成功后登录态自动落盘，无需任何额外操作。<br>
-        若页面弹出滑块/字元验证（机房 IP 风控），<b><a href="./console#browser" style="color:#25f4ee">进入完整浏览器面板</a></b> 可直接在画面上触摸/拖动操作验证——画面是真实浏览器的实时画面。
+      <div class="tip" id="modeTip">
+        用 <b>小红书 App 扫码</b>，成功后登录态自动落盘。<br>
+        若弹出滑块/字元验证（机房 IP 风控），可在下方「输入工具」里操作，或直接在画面上拖动。
       </div>
     </div>
 
     <div class="card">
-      <h2><em>②</em> Cookie 导入（备用通道）</h2>
-      <textarea id="cookieBox" placeholder="粘贴浏览器 Cookie，例如：sessionid=xxx; passport_csrf_token=yyy; ..."></textarea>
+      <h2><em>②</em> 短信验证码登录</h2>
+      <div class="step"><b>1.</b> 点上方「手机验证码」标签，再点「打开登录页」切到短信登录界面</div>
+      <div class="step"><b>2.</b> 填手机号，点「获取验证码」，验证码会发到对方手机</div>
+      <input type="tel" id="smsPhone" placeholder="对方手机号" autocomplete="off">
+      <div class="row">
+        <button class="btn small" id="btnFillPhone">填入手机号</button>
+        <button class="btn small ghost" id="btnSendCode">点「获取验证码」</button>
+      </div>
+      <div class="step" style="margin-top:10px"><b>3.</b> 对方把收到的验证码发给你，填进下面再点「填入验证码」</div>
+      <input type="text" id="smsCode" placeholder="收到的短信验证码" autocomplete="off" style="margin-top:6px">
+      <div class="row">
+        <button class="btn small" id="btnFillCode">填入验证码</button>
+        <button class="btn small ghost" id="btnSmsStatus">查登录状态</button>
+      </div>
+      <div class="tip" id="smsTip">验证码框如果识别不到，用下方「输入工具」手动选输入框。</div>
+    </div>
+
+    <div class="card">
+      <h2><em>③</em> 输入工具（验证码/手机号填不进去用这个）</h2>
+      <div class="row">
+        <button class="btn small ghost" id="btnFind">🔍 扫描输入框</button>
+        <button class="btn small ghost" id="btnClear">清空选中框</button>
+      </div>
+      <div class="input-list" id="inputList"></div>
+      <div class="row">
+        <input type="text" id="typeText" placeholder="要输入的文字（如验证码/手机号）" autocomplete="off" style="flex:1">
+        <button class="btn small" id="btnType">输入</button>
+      </div>
+      <div class="row">
+        <button class="btn small ghost" id="btnKeyEnter">Enter</button>
+        <button class="btn small ghost" id="btnKeyTab">Tab</button>
+        <button class="btn small ghost" id="btnKeyBack">Backspace</button>
+      </div>
+      <div class="tip" id="focusTip">点「扫描输入框」列出页面所有输入框，点选聚焦后输入文字。跨域验证码框也能输。</div>
+    </div>
+
+    <div class="card">
+      <h2><em>④</em> Cookie 导入（备用通道）</h2>
+      <textarea id="cookieBox" placeholder="粘贴浏览器 Cookie，例如：web_session=xxx; passport_csrf_token=yyy; ..."></textarea>
       <div class="row">
         <button class="btn" id="btnCookie">注入 Cookie 登录</button>
       </div>
       <div class="tip">
         从电脑/手机浏览器登录小红书网页版后，在开发者工具 Console 执行 <b>document.cookie</b> 复制全部内容粘贴到这里。<br>
-        注：HttpOnly 字段（如 sessionid）用 document.cookie 拿不全，优先用扫码通道。
+        注：HttpOnly 字段（如 web_session）用 document.cookie 拿不全，优先用扫码/短信通道。
       </div>
     </div>
   </div>
 
   <div class="status-line" id="statusLine">等待连接…</div>
-<div class="status-line" id="depsLine" style="color:#ffb020">检测浏览器依赖…</div>
+  <div class="status-line" id="depsLine" style="color:#ffb020">检测浏览器依赖…</div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -209,7 +214,7 @@
     t.style.color = ok === false ? "#ff5c5c" : "#25f4ee";
     t.classList.add("show");
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 2600);
+    toastTimer = setTimeout(function () { t.classList.remove("show"); }, 3000);
   }
   var lastTs = 0, failCnt = 0;
   async function refreshShot(manual) {
@@ -282,20 +287,214 @@
       }
     } catch (e) {}
   }
-  $("btnOpen").addEventListener("click", function () {
-    var b = this; b.disabled = true; b.textContent = "正在打开…";
-    api("/open_login").then(function (r) {
-      toast(r.ok ? "已打开登录页，画面即将更新" : (r.message || "打开失败"), !!r.ok);
-      setTimeout(function () { refreshShot(true); }, 1500);
-    }).catch(function () {
-      toast("请求失败", false);
-    }).finally(function () {
-      b.disabled = false; b.textContent = "打开登录页";
+
+  // ── 登录方式切换 ────────────────────────────────────────────
+  var curMode = "qr";
+  var modeNames = { qr: "扫码登录", sms: "手机验证码登录", wechat: "微信扫码登录" };
+  var modeTips = {
+    qr: "用 <b>小红书 App 扫码</b>，成功后登录态自动落盘。<br>若弹出滑块/字元验证（机房 IP 风控），可在下方「输入工具」里操作，或直接在画面上拖动。",
+    sms: "切换到 <b>手机验证码登录</b>：填对方手机号 → 点获取验证码 → 短信发到对方手机 → 把收到的验证码填进输入框，登录态自动落盘。",
+    wechat: "切换到 <b>微信扫码登录</b>：用微信扫页面上的二维码授权。<br>注意：微信入口是否出现由小红书风控决定，看不到就在画面上找「更多登录方式」。"
+  };
+  function setMode(mode) {
+    curMode = mode;
+    document.querySelectorAll(".tab").forEach(function (t) {
+      t.classList.toggle("active", t.getAttribute("data-mode") === mode);
+    });
+    $("modeTip").innerHTML = modeTips[mode] || modeTips.qr;
+    $("btnOpen").textContent = "打开登录页（" + (modeNames[mode] || "扫码登录") + "）";
+  }
+  document.querySelectorAll(".tab").forEach(function (t) {
+    t.addEventListener("click", function () {
+      setMode(t.getAttribute("data-mode"));
+      openLogin(false);
     });
   });
-  $("btnRefresh").addEventListener("click", function () {
-    refreshShot(true);
+  async function openLogin(showToast) {
+    var b = $("btnOpen"); b.disabled = true; b.textContent = "正在打开…";
+    try {
+      var r = await api("/open_login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ mode: curMode }) });
+      toast(r.ok ? ("已打开登录页：" + (modeNames[curMode] || "")) : (r.message || "打开失败"), !!r.ok);
+      setTimeout(function () { refreshShot(true); }, 1500);
+      setTimeout(function () { scanInputs(false); }, 2500);
+    } catch (e) {
+      toast("请求失败", false);
+    } finally {
+      b.disabled = false; b.textContent = "打开登录页（" + (modeNames[curMode] || "扫码登录") + "）";
+    }
+  }
+  $("btnOpen").addEventListener("click", function () { openLogin(true); });
+  $("btnRefresh").addEventListener("click", function () { refreshShot(true); });
+
+  // ── 输入工具（跨域 iframe 直输） ──────────────────────────────
+  var inputsCache = [];
+  var selIndex = -1;
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+  }
+  async function scanInputs(silent) {
+    var list = $("inputList");
+    try {
+      var r = await api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "find_inputs" }) });
+      inputsCache = (r && r.inputs) || [];
+      if (!inputsCache.length) {
+        list.innerHTML = "";
+        if (!silent) toast("没扫到输入框，确认页面已弹出登录/验证码框", false);
+        return;
+      }
+      list.innerHTML = inputsCache.map(function (it, i) {
+        var ph = esc(it.placeholder || it.type || "输入框");
+        var extra = it.type ? " <small>[" + esc(it.type) + "]</small>" : "";
+        return '<button class="input-item" data-idx="' + i + '">' + (i + 1) + ". " + ph + extra + "</button>";
+      }).join("");
+      list.querySelectorAll(".input-item").forEach(function (b) {
+        b.addEventListener("click", function () { focusInput(parseInt(b.getAttribute("data-idx"), 10)); });
+      });
+      if (!silent) toast("找到 " + inputsCache.length + " 个输入框，点一个聚焦", true);
+      // 自动提示：手机号/验证码框位置
+      var phoneIdx = inputsCache.findIndex(function (it) { return it.type === "tel" || /手机|电话/.test(it.placeholder || ""); });
+      var codeIdx = inputsCache.findIndex(function (it) { return /验证码|短信|校验码/.test(it.placeholder || "") || /code/i.test(it.placeholder || ""); });
+      var tip = $("focusTip");
+      var parts = [];
+      if (phoneIdx >= 0) parts.push("手机号框 ≈ 第 " + (phoneIdx + 1) + " 个");
+      if (codeIdx >= 0) parts.push("验证码框 ≈ 第 " + (codeIdx + 1) + " 个");
+      if (parts.length) tip.innerHTML = "<b style='color:#25f4ee'>自动识别：</b>" + parts.join("，") + "，点对应按钮聚焦后输入";
+    } catch (e) {
+      if (!silent) toast("扫描失败", false);
+    }
+  }
+  async function focusInput(index) {
+    var r = await api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "focus_input", index: index }) });
+    var f = (r && r.focus) || {};
+    if (f && f.ok) {
+      selIndex = index;
+      document.querySelectorAll(".input-item").forEach(function (b) {
+        b.classList.toggle("sel", parseInt(b.getAttribute("data-idx"), 10) === index);
+      });
+      var it = inputsCache[index] || {};
+      var tip = $("focusTip");
+      tip.innerHTML = "✅ 已聚焦第 " + (index + 1) + " 个输入框" + (it.placeholder ? "「" + esc(it.placeholder) + "」" : "") + "，在下面输入文字点「输入」";
+      tip.style.color = "#25f4ee";
+      toast("已聚焦输入框 " + (index + 1), true);
+    } else {
+      toast((f && f.err) || "聚焦失败，试试重新扫描", false);
+    }
+  }
+  async function typeInto(index, text) {
+    if (index < 0) {
+      toast("先点一个输入框", false);
+      return false;
+    }
+    var r = await api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "type", index: index, text: text }) });
+    var typed = (r && r.typed) || {};
+    if (typed && typed.ok) {
+      toast("已输入到第 " + (index + 1) + " 个输入框", true);
+      return true;
+    }
+    toast((typed && typed.err) || "输入失败", false);
+    return false;
+  }
+  $("btnFind").addEventListener("click", function () { scanInputs(false); });
+  $("btnClear").addEventListener("click", function () {
+    if (selIndex < 0) { toast("先选中一个输入框", false); return; }
+    api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "key", key: "Control+a" }) }).then(function () {
+      setTimeout(function () {
+        api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "key", key: "Backspace" }) }).then(function () { toast("已清空", true); });
+      }, 200);
+    });
   });
+  $("btnType").addEventListener("click", function () {
+    var text = $("typeText").value;
+    if (!text) { toast("先输入要填的文字", false); return; }
+    if (selIndex < 0) { toast("先点一个输入框再输入", false); return; }
+    typeInto(selIndex, text).then(function (ok) { if (ok) $("typeText").value = ""; });
+  });
+  $("typeText").addEventListener("keydown", function (e) {
+    if (e.key === "Enter") $("btnType").click();
+  });
+  function sendKey(k) {
+    if (selIndex < 0) { toast("先选中输入框", false); return; }
+    api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "key", key: k }) }).then(function () { toast("已按键 " + k, true); });
+  }
+  $("btnKeyEnter").addEventListener("click", function () { sendKey("Enter"); });
+  $("btnKeyTab").addEventListener("click", function () { sendKey("Tab"); });
+  $("btnKeyBack").addEventListener("click", function () { sendKey("Backspace"); });
+
+  // ── 短信验证码流程 ────────────────────────────────────────────
+  function pickPhoneIdx(inputs) {
+    return inputs.findIndex(function (it) {
+      return it.type === "tel" || /手机|电话|手机号/.test(it.placeholder || "") || it.type === "number";
+    });
+  }
+  function pickCodeIdx(inputs) {
+    return inputs.findIndex(function (it) {
+      return /验证码|短信|校验码/.test(it.placeholder || "") || /code/i.test(it.placeholder || "");
+    });
+  }
+  async function refillScan() {
+    var r = await api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "find_inputs" }) });
+    inputsCache = (r && r.inputs) || [];
+    return inputsCache;
+  }
+  $("btnFillPhone").addEventListener("click", function () {
+    var phone = $("smsPhone").value.trim();
+    if (!phone) { toast("先填手机号", false); return; }
+    var b = this; b.disabled = true; b.textContent = "填写中…";
+    refillScan().then(function (inputs) {
+      var idx = pickPhoneIdx(inputs);
+      if (idx < 0) {
+        toast("没识别到手机号输入框，点「扫描输入框」手动选", false);
+        return;
+      }
+      return typeInto(idx, phone).then(function (ok) {
+        if (ok) toast("手机号已填入，下一步点「获取验证码」", true);
+      });
+    }).catch(function () { toast("操作失败", false); }).finally(function () {
+      b.disabled = false; b.textContent = "填入手机号";
+    });
+  });
+  $("btnSendCode").addEventListener("click", function () {
+    var b = this; b.disabled = true; b.textContent = "点击中…";
+    api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "click_text", text: "获取验证码" }) }).then(function (r) {
+      var ct = (r && r.click_text) || {};
+      if (ct && ct.ok) {
+        toast("已点「获取验证码」，短信会发到对方手机", true);
+      } else {
+        // 兜底：尝试「发送验证码」文案
+        return api("/browser_action", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ type: "click_text", text: "发送验证码" }) }).then(function (r2) {
+          var ct2 = (r2 && r2.click_text) || {};
+          if (ct2 && ct2.ok) { toast("已点「发送验证码」，短信会发到对方手机", true); }
+          else { toast((ct.err || ct2.err || "没找到获取验证码按钮") + "，可在画面上手动点", false); }
+        });
+      }
+    }).catch(function () { toast("请求失败", false); }).finally(function () {
+      b.disabled = false; b.textContent = "点「获取验证码」";
+    });
+  });
+  $("btnFillCode").addEventListener("click", function () {
+    var code = $("smsCode").value.trim();
+    if (!code) { toast("先填收到的验证码", false); return; }
+    var b = this; b.disabled = true; b.textContent = "填写中…";
+    refillScan().then(function (inputs) {
+      var idx = pickCodeIdx(inputs);
+      if (idx < 0) {
+        // 兜底：密码/验证码类输入框（type=password 或 placeholder 为空但数量>1 的第二个框）
+        idx = inputs.findIndex(function (it) { return it.type === "password"; });
+        if (idx < 0 && inputs.length > 1) idx = 1;
+        if (idx < 0) { toast("没识别到验证码框，点「扫描输入框」手动选", false); return; }
+      }
+      return typeInto(idx, code).then(function (ok) {
+        if (ok) {
+          toast("验证码已填入，稍候自动登录", true);
+          setTimeout(function () { sendKey("Enter"); }, 600);
+          setTimeout(pollStatus, 3000);
+        }
+      });
+    }).catch(function () { toast("操作失败", false); }).finally(function () {
+      b.disabled = false; b.textContent = "填入验证码";
+    });
+  });
+  $("btnSmsStatus").addEventListener("click", function () { pollStatus(); });
   $("btnCookie").addEventListener("click", function () {
     var cookie = $("cookieBox").value.trim();
     if (!cookie) { toast("先粘贴 Cookie 再注入", false); return; }
@@ -313,6 +512,7 @@
       b.disabled = false; b.textContent = "注入 Cookie 登录";
     });
   });
+
   setInterval(function () { refreshShot(false); }, 2000);
   setInterval(pollStatus, 4000);
   pollStatus();

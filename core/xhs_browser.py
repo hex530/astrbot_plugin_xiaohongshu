@@ -965,6 +965,40 @@ class BrowserManager:
             logger.warning(f"向输入框输入失败: {exc}")
             return {"ok": False, "err": str(exc)}
 
+    async def click_text(self, text: str) -> dict:
+        """按文本点击页面按钮/链接（含跨域 iframe 遍历）。
+
+        用于点「获取验证码」「同意并继续」这类文案按钮。
+        基于 Playwright 原生 frame locator——跨域 iframe 也能点。
+        """
+        text = (text or "").strip()
+        if not text:
+            return {"ok": False, "err": "缺少文本参数"}
+        page = self.active_page
+        selectors = [
+            f"button:has-text('{text}')",
+            f"a:has-text('{text}')",
+            f"text={text}",
+            f"span:has-text('{text}')",
+            f"div:has-text('{text}')",
+        ]
+        for fi, frame in enumerate(page.frames):
+            for sel in selectors:
+                try:
+                    loc = frame.locator(sel).first
+                    if await loc.is_visible(timeout=1200):
+                        try:
+                            await loc.scroll_into_view_if_needed(timeout=2000)
+                        except Exception:
+                            pass
+                        await asyncio.sleep(0.2)
+                        await loc.click(timeout=3000)
+                        await asyncio.sleep(0.5)
+                        return {"ok": True, "frame": fi, "selector": sel}
+                except Exception:
+                    continue
+        return {"ok": False, "err": f"没找到可点击的「{text}」"}
+
     async def press_key(self, key: str) -> None:
         """按键，如 Enter / Tab / Escape。"""
         await self.active_page.keyboard.press(key)

@@ -783,7 +783,10 @@ class XiaohongshuPlugin(Star):
             return error_response(f"截图失败：{exc}", status_code=500)
 
     async def api_open_login(self):
-        """打开小红书登录页（供远程面板手动过验证/扫码）。"""
+        """打开小红书登录页，并按 mode 切换到对应登录方式。
+
+        mode: qr（默认，App扫码）/ sms（手机验证码）/ wechat（微信扫码）
+        """
         try:
             if not self._browser.is_started:
                 await self._browser.start()
@@ -800,7 +803,19 @@ class XiaohongshuPlugin(Star):
                 except Exception:
                     continue
             await asyncio.sleep(1.5)
-            for sel in ["text=扫码登录", "text=扫一扫登录", "div:has-text('扫码登录')"]:
+            # 登录方式 tab 切换（GET 走 query，POST 走 body）
+            mode = "qr"
+            try:
+                body = await request.json(default={})
+                mode = str(body.get("mode") or request.query.get("mode") or "qr").lower()
+            except Exception:
+                mode = str(request.query.get("mode") or "qr").lower()
+            tab_selectors = {
+                "qr": ["text=扫码登录", "text=扫一扫登录", "div:has-text('扫码登录')", "span:has-text('扫码登录')"],
+                "sms": ["text=验证码登录", "text=手机号登录", "text=手机登录", "div:has-text('验证码登录')", "span:has-text('验证码登录')", "input[type='tel']"],
+                "wechat": ["text=微信登录", "div:has-text('微信登录')", "span:has-text('微信登录')"],
+            }
+            for sel in tab_selectors.get(mode, tab_selectors["qr"]):
                 try:
                     tab = await page.wait_for_selector(sel, timeout=2500)
                     if tab:
@@ -809,7 +824,8 @@ class XiaohongshuPlugin(Star):
                 except Exception:
                     continue
             await asyncio.sleep(1)
-            return json_response({"ok": True, "message": "已打开小红书登录页"})
+            mode_name = {"qr": "扫码登录", "sms": "手机验证码登录", "wechat": "微信扫码登录"}.get(mode, "扫码登录")
+            return json_response({"ok": True, "message": f"已打开小红书登录页（{mode_name}）", "mode": mode})
         except Exception as exc:
             logger.exception(f"[xhs] 远程面板打开登录页异常: {exc}")
             return error_response(f"打开登录页失败：{exc}", status_code=500)
@@ -844,6 +860,12 @@ class XiaohongshuPlugin(Star):
                     extra = {"typed": typed}
                 else:
                     await self._browser.type_text(float(payload.get("x", 0)), float(payload.get("y", 0)), text)
+            elif act == "click_text":
+                text = str(payload.get("text") or "").strip()
+                if not text:
+                    return error_response("缺少 text 参数", status_code=400)
+                ct = await self._browser.click_text(text)
+                extra = {"click_text": ct}
             elif act == "find_inputs":
                 inputs = await self._browser.find_inputs()
                 extra = {"inputs": inputs, "count": len(inputs)}
