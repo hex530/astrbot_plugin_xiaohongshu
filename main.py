@@ -42,6 +42,7 @@ from astrbot.api.web import error_response, json_response, request
 
 from .core.xhs_browser import BrowserManager
 from .core.xhs import XhsClient
+from .core.xhs_publish import install_publish as _install_xhs_publish
 
 P = "astrbot_plugin_xiaohongshu"
 PLATFORM = "xhs"
@@ -52,6 +53,12 @@ WUI_CFG_KEYS = [
     "offline_notify", "offline_relogin", "notify_target",
     "nurture_enabled", "nurture_rounds", "nurture_wait",
     "nurture_like_prob", "nurture_collect_prob",
+    # AI 自动能力开关
+    "ai_enabled", "ai_actions", "ai_talk_back",
+    # 进程级保活
+    "keepalive_enabled", "keepalive_check_interval",
+    # 定时养号调度
+    "nurture_auto", "nurture_interval",
 ]
 
 
@@ -63,6 +70,7 @@ class XiaohongshuPlugin(Star):
         self._data_dir = self._resolve_data_dir()
         self._browser = BrowserManager(self._data_dir, headless=True)
         self._client = XhsClient(self._browser)
+        _install_xhs_publish(XhsClient)
         self._register_web_apis(context)
         self._maintenance_task: Optional[asyncio.Task] = None
         self._offline_notified = False
@@ -71,6 +79,13 @@ class XiaohongshuPlugin(Star):
         # 浏览养号状态
         self._browsing = False
         self._browse_stats = {"likes": 0, "collects": 0, "views": 0}
+        # AI 自动能力
+        self._ai_lock = asyncio.Lock()
+        self._ai_ops: dict = {"count": 0, "last": "", "last_ts": 0.0}
+        # 保活 / 调度
+        self._last_keepalive_check = 0.0
+        self._last_nurture_ts = 0.0
+        self._nurture_task: Optional[asyncio.Task] = None
 
     # ── 基础 ────────────────────────────────────────────────────
     def _resolve_data_dir(self) -> str:
@@ -162,6 +177,72 @@ class XiaohongshuPlugin(Star):
                     logger.info("[xhs] Cookie 已自动刷新保存")
                 except Exception as exc:
                     logger.warning(f"[xhs] Cookie 自动刷新失败: {exc}")
+        # 进程级保活：浏览器意外退出/崩溃时自动拉起
+        await self._keepalive_tick()
+        # 定时养号调度
+        await self._nurture_tick()
+
+    async def _keepalive_tick(self) -> None:
+        if not self._cfg_get("keepalive_enabled", True):
+            return
+        now = time.time()
+        interval = max(30, int(self._cfg_get("keepalive_check_interval", 120) or 120))
+        if now - self._last_keepalive_check < interval:
+            return
+        self._last_keepalive_check = now
+        if self._browser.is_started:
+            # 浏览器已启动但页面可能已死：尝试探活
+            try:
+                page = self._browser.page
+                await asyncio.wait_for(page.evaluate("1 + 1"), timeout=8)
+                return
+            except Exception:
+                logger.warning("[xhs] 浏览器页面无响应，尝试重启浏览器…")
+                try:
+                    await self._browser.close()
+                except Exception:
+                    pass
+        # 未启动或已关闭：按需拉起
+        try:
+            if not self._browser.is_started:
+                await self._browser.start()
+                logger.info("[xhs] 保活：浏览器已自动拉起")
+        except Exception as exc:
+            logger.warning(f"[xhs] 保活拉起浏览器失败: {exc}")
+
+    async def _nurture_tick(self) -> None:
+        if not self._cfg_get("nurture_auto", False):
+            return
+        if not self._cfg_get("nurture_enabled", True):
+            return
+        if self._browsing or (self._nurture_task and not self._nurture_task.done()):
+            return
+        if not await self._real_auth():
+            return
+        interval = max(600, int(self._cfg_get("nurture_interval", 3600) or 3600))
+        now = time.time()
+        if now - self._last_nurture_ts < interval:
+            return
+        self._last_nurture_ts = now
+        self._nurture_task = asyncio.create_task(self._auto_nurture())
+        logger.info("[xhs] 定时养号已触发")
+
+    async def _auto_nurture(self) -> None:
+        try:
+            if not self._browser.is_started:
+                await self._browser.start()
+            rounds = max(1, min(int(self._cfg_get("nurture_rounds", 5) or 5), 15))
+            wait = max(2, int(self._cfg_get("nurture_wait", 6) or 6))
+            self._browsing = True
+            try:
+                viewed = await self._client.browse_feed(rounds=rounds, wait_sec=wait)
+                self._browse_stats["views"] += viewed
+            finally:
+                self._browsing = False
+            logger.info(f"[xhs] 定时养号完成，浏览 {viewed} 轮")
+        except Exception as exc:
+            self._browsing = False
+            logger.warning(f"[xhs] 定时养号异常: {exc}")
 
     async def _send_notify(self, text: str) -> None:
         target = str(self._cfg_get("notify_target", "") or "").strip()
@@ -486,6 +567,13 @@ class XiaohongshuPlugin(Star):
             "nurture_wait": int(self._cfg_get("nurture_wait", 6) or 6),
             "nurture_like_prob": float(self._cfg_get("nurture_like_prob", 0.2) or 0.2),
             "nurture_collect_prob": float(self._cfg_get("nurture_collect_prob", 0.15) or 0.15),
+            "ai_enabled": bool(self._cfg_get("ai_enabled", True)),
+            "ai_actions": str(self._cfg_get("ai_actions", "publish,search,interact,browse") or "publish,search,interact,browse"),
+            "ai_talk_back": bool(self._cfg_get("ai_talk_back", True)),
+            "keepalive_enabled": bool(self._cfg_get("keepalive_enabled", True)),
+            "keepalive_check_interval": int(self._cfg_get("keepalive_check_interval", 120) or 120),
+            "nurture_auto": bool(self._cfg_get("nurture_auto", False)),
+            "nurture_interval": int(self._cfg_get("nurture_interval", 3600) or 3600),
         })
 
     async def api_qr(self):
@@ -930,3 +1018,368 @@ class XiaohongshuPlugin(Star):
         except Exception as exc:
             logger.exception(f"[xhs] Cookie 抓取异常: {exc}")
             return error_response(f"Cookie 抓取失败：{exc}", status_code=500)
+
+
+
+    # ================================================================
+    #  LLM 工具（AI 自动调用小红书：发布/搜索/互动/状态）
+    # ================================================================
+    async def _ai_gate(self, action: str) -> Optional[str]:
+        if not self._cfg_get("ai_enabled", True):
+            return "AI 自动操作未开启（ai_enabled=false），需要在设置里打开我才能代操作小红书。"
+        allowed = str(self._cfg_get("ai_actions", "publish,search,interact,browse") or "")
+        allow_list = [a.strip().lower() for a in allowed.replace("，", ",").split(",") if a.strip()]
+        if action not in allow_list:
+            return f"动作 {action} 不在 AI 允许列表（当前允许：{', '.join(allow_list) or '无'}）。"
+        return None
+
+    def _ai_track(self, action: str, ok: bool) -> None:
+        self._ai_ops["count"] = int(self._ai_ops.get("count") or 0) + 1
+        self._ai_ops["last"] = f"{action}:{'成功' if ok else '失败'}"
+        self._ai_ops["last_ts"] = time.time()
+
+    async def _ai_login_check(self) -> Optional[str]:
+        try:
+            await self._ensure_browser_started()
+        except Exception as exc:
+            return f"浏览器启动失败：{exc}"
+        if not self._browser.is_authenticated and not await self._real_auth():
+            return "小红书还没登录，需要先在小红书面板扫码登录我才能操作。"
+        return None
+
+    async def _ai_serialize(self) -> None:
+        async with self._ai_lock:
+            now = time.time()
+            last = self._ai_ops.get("last_ts") or 0
+            if last and now - last < 1.2:
+                await asyncio.sleep(min(1.2, max(0.3, 1.2 - (now - last))))
+
+    def _ai_cut(self, text: str, limit: int = 1200) -> str:
+        text = (text or "").strip()
+        return text if len(text) <= limit else text[:limit] + "…(已截断)"
+
+    @filter.llm_tool(name="xhs_publish_note")
+    async def xhs_publish_note(self, event: AstrMessageEvent, images: str = "", title: str = "", content: str = "", topics: str = ""):
+        """在小红书发布一篇图文笔记（AI 代发笔记）。
+
+        当用户要求在小红书发笔记/发图文/发帖子/更新小红书时调用。发布前会检查登录与开关，发布结果会真实生效。
+
+        Args:
+            images (string): 图片列表：本地图片路径或 http(s) 图片链接，多张用逗号或换行分隔，至少一张
+            title (string): 笔记标题（建议 20 字以内）
+            content (string): 笔记正文，可多行
+            topics (string): 话题词列表，不带 # 号，多个用逗号分隔，如 美食,探店
+
+        Returns:
+            发布结果：成功返回笔记发布成功，失败返回具体原因。
+        """
+        gate = await self._ai_gate("publish")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        img_list = [x.strip() for x in re.split(r"[\n,，]", images or "") if x.strip()]
+        topic_list = [x.strip().lstrip("#") for x in re.split(r"[\n,，]", topics or "") if x.strip()]
+        if not img_list:
+            return "缺少图片：发布小红书笔记至少需要一张图片（本地路径或网络图片链接）。"
+        if not (title or "").strip() and not (content or "").strip():
+            return "标题和正文不能都为空，请补充后再发布。"
+        try:
+            r = await self._client.publish_note(
+                img_list,
+                title=(title or "").strip(),
+                content=(content or "").strip(),
+                topics=topic_list,
+            )
+            ok = bool(r.get("ok"))
+            self._ai_track("publish", ok)
+            if ok:
+                return "笔记发布成功：" + (r.get("message") or "").strip()
+            stage = r.get("stage") or ""
+            msg = r.get("message") or ""
+            if stage == "auth":
+                return "发布失败：小红书未登录，请先扫码登录。"
+            return f"笔记发布未完成（{stage}）：{msg}"
+        except Exception as exc:
+            self._ai_track("publish", False)
+            return f"发布失败：{exc}"
+
+    @filter.llm_tool(name="xhs_search_notes")
+    async def xhs_search_notes(self, event: AstrMessageEvent, keyword: str = "", num: str = "6"):
+        """在小红书搜索笔记并返回结果列表（标题/作者/点赞/链接）。
+
+        当用户想在小红书搜攻略/找笔记/查内容/搜种草时调用。
+
+        Args:
+            keyword (string): 搜索关键词
+            num (string): 返回条数，默认 6，最多 15
+
+        Returns:
+            搜索结果列表文本，每条含标题、作者、链接。
+        """
+        kw = (keyword or "").strip()
+        if not kw:
+            return "缺少搜索关键词。"
+        gate = await self._ai_gate("search")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            n = max(1, min(int(num or 6), 15))
+        except Exception:
+            n = 6
+        try:
+            results = await self._client.search_notes(kw, n)
+            self._ai_track("search", True)
+            if not results:
+                return f"没有搜到和「{kw}」相关的小红书笔记。"
+            lines = [f"「{kw}」搜索结果 {len(results)} 条："]
+            for i, it in enumerate(results[:n], 1):
+                lines.append(f"{i}. {it.get('title') or '(无标题)'} | 作者:{it.get('author') or '?'} | {it.get('link') or ''}")
+            return self._ai_cut("\n".join(lines), 1500)
+        except Exception as exc:
+            self._ai_track("search", False)
+            return f"搜索失败：{exc}"
+
+    @filter.llm_tool(name="xhs_note_detail")
+    async def xhs_note_detail(self, event: AstrMessageEvent, url: str = ""):
+        """查看小红书单篇笔记的详情（标题/作者/正文/图片数/链接）。
+
+        当用户给出小红书链接让看看内容、或想了解某篇笔记讲了什么时调用。
+
+        Args:
+            url (string): 笔记链接，形如 https://www.xiaohongshu.com/explore/xxx
+
+        Returns:
+            笔记详情文本（标题、作者、正文、图片）。
+        """
+        link = (url or "").strip()
+        if not link:
+            return "缺少笔记链接 url。"
+        gate = await self._ai_gate("search")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            info = await self._client.get_note_detail(link)
+            self._ai_track("search", True)
+            if not info:
+                return "笔记解析失败：链接可能无效或页面结构有变。"
+            lines = [
+                f"标题：{info.get('title') or '(无标题)'}",
+                f"作者：{info.get('author') or '?'}",
+                f"链接：{info.get('url') or link}",
+            ]
+            if info.get("desc"):
+                lines.append("正文：" + self._ai_cut(info["desc"], 800))
+            imgs = info.get("images") or []
+            if imgs:
+                lines.append(f"图片 {len(imgs)} 张，第一张：{imgs[0]}")
+            return "\n".join(lines)
+        except Exception as exc:
+            self._ai_track("search", False)
+            return f"获取笔记详情失败：{exc}"
+
+    @filter.llm_tool(name="xhs_note_comments")
+    async def xhs_note_comments(self, event: AstrMessageEvent, url: str = "", num: str = "8"):
+        """查看小红书笔记下的评论列表。
+
+        当用户想看看某篇笔记的评论/热评/大家怎么说时调用。
+
+        Args:
+            url (string): 笔记链接
+            num (string): 返回评论条数，默认 8，最多 15
+
+        Returns:
+            评论列表文本。
+        """
+        link = (url or "").strip()
+        if not link:
+            return "缺少笔记链接 url。"
+        gate = await self._ai_gate("search")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            n = max(1, min(int(num or 8), 15))
+        except Exception:
+            n = 8
+        try:
+            comments = await self._client.fetch_comments(link, n)
+            self._ai_track("search", True)
+            if not comments:
+                return "这篇笔记还没有评论，或评论抓取失败。"
+            lines = [f"共抓取 {len(comments)} 条评论："]
+            for i, c in enumerate(comments[:n], 1):
+                if isinstance(c, dict):
+                    user = c.get("user") or c.get("author") or c.get("nickname") or "?"
+                    text = c.get("text") or c.get("content") or str(c)
+                    lines.append(f"{i}. {user}：{text}")
+                else:
+                    lines.append(f"{i}. {c}")
+            return self._ai_cut("\n".join(lines), 1500)
+        except Exception as exc:
+            self._ai_track("search", False)
+            return f"获取评论失败：{exc}"
+
+    @filter.llm_tool(name="xhs_like_note")
+    async def xhs_like_note(self, event: AstrMessageEvent, url: str = ""):
+        """给小红书笔记点赞（已点赞会取消）。
+
+        当用户明确要求点赞某篇小红书笔记时调用，不要擅自点赞。
+
+        Args:
+            url (string): 笔记链接
+
+        Returns:
+            点赞结果文本。
+        """
+        link = (url or "").strip()
+        if not link:
+            return "缺少笔记链接 url。"
+        gate = await self._ai_gate("interact")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            ok = await self._client.like_note(link)
+            self._ai_track("like", ok)
+            return "点赞成功。" if ok else "点赞失败：可能页面结构变化或未登录。"
+        except Exception as exc:
+            self._ai_track("like", False)
+            return f"点赞失败：{exc}"
+
+    @filter.llm_tool(name="xhs_collect_note")
+    async def xhs_collect_note(self, event: AstrMessageEvent, url: str = ""):
+        """收藏小红书笔记到个人收藏夹。
+
+        当用户明确要求收藏某篇笔记时调用。
+
+        Args:
+            url (string): 笔记链接
+
+        Returns:
+            收藏结果文本。
+        """
+        link = (url or "").strip()
+        if not link:
+            return "缺少笔记链接 url。"
+        gate = await self._ai_gate("interact")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            ok = await self._client.collect_note(link)
+            self._ai_track("collect", ok)
+            return "收藏成功。" if ok else "收藏失败：可能页面结构变化或未登录。"
+        except Exception as exc:
+            self._ai_track("collect", False)
+            return f"收藏失败：{exc}"
+    @filter.llm_tool(name="xhs_comment_note")
+    async def xhs_comment_note(self, event: AstrMessageEvent, url: str = "", text: str = ""):
+        """在小红书笔记下发表评论。
+
+        当用户明确要求评论某篇笔记/在评论区留言时调用。评论内容由用户指定，不要编造。
+
+        Args:
+            url (string): 笔记链接
+            text (string): 评论内容
+
+        Returns:
+            评论结果文本。
+        """
+        link = (url or "").strip()
+        content = (text or "").strip()
+        if not link:
+            return "缺少笔记链接 url。"
+        if not content:
+            return "缺少评论内容 text。"
+        gate = await self._ai_gate("interact")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            ok = await self._client.comment_note(link, content)
+            self._ai_track("comment", ok)
+            return "评论发布成功。" if ok else "评论失败：可能页面结构变化或未登录。"
+        except Exception as exc:
+            self._ai_track("comment", False)
+            return f"评论失败：{exc}"
+
+    @filter.llm_tool(name="xhs_follow_user")
+    async def xhs_follow_user(self, event: AstrMessageEvent, url: str = ""):
+        """关注小红书用户（需要用户主页链接）。
+
+        当用户明确要求关注某个小红书博主/用户时调用。
+
+        Args:
+            url (string): 用户主页链接，形如 https://www.xiaohongshu.com/user/profile/xxx
+
+        Returns:
+            关注结果文本。
+        """
+        link = (url or "").strip()
+        if not link:
+            return "缺少用户主页链接 url（形如 /user/profile/xxx）。"
+        gate = await self._ai_gate("interact")
+        if gate:
+            return gate
+        err = await self._ai_login_check()
+        if err:
+            return err
+        await self._ai_serialize()
+        try:
+            ok = await self._client.follow_user(link)
+            self._ai_track("follow", ok)
+            return "关注成功。" if ok else "关注失败：可能页面结构变化或未登录。"
+        except Exception as exc:
+            self._ai_track("follow", False)
+            return f"关注失败：{exc}"
+
+    @filter.llm_tool(name="xhs_account_status")
+    async def xhs_account_status(self, event: AstrMessageEvent):
+        """查询小红书账号当前状态（登录态/浏览器/养号统计/AI 操作统计）。
+
+        当用户问小红书机器人还活着吗/登录状态/今天操作过什么时调用，只读不产生操作。
+
+        Returns:
+            账号与运行状态文本。
+        """
+        browser_on = bool(getattr(self._browser, "is_started", False))
+        auth = False
+        try:
+            auth = bool(getattr(self._browser, "is_authenticated", False)) or await self._real_auth()
+        except Exception:
+            pass
+        lines = [
+            f"浏览器：{'运行中' if browser_on else '未启动'}",
+            f"登录状态：{'已登录' if auth else '未登录'}",
+            f"AI 累计操作：{self._ai_ops.get('count') or 0} 次",
+        ]
+        if self._ai_ops.get("last"):
+            lines.append(f"最近一次：{self._ai_ops['last']}")
+        if self._browse_stats:
+            lines.append(f"养号浏览：{self._browse_stats.get('views') or 0} 轮 | 点赞 {self._browse_stats.get('likes') or 0} | 收藏 {self._browse_stats.get('collects') or 0}")
+        lines.append(f"AI 自动操作开关：{'开' if self._cfg_get('ai_enabled', True) else '关'}")
+        lines.append(f"保活开关：{'开' if self._cfg_get('keepalive_enabled', True) else '关'} | 定时养号：{'开' if self._cfg_get('nurture_auto', False) else '关'}")
+        return "\n".join(lines)
