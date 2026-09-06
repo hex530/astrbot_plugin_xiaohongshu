@@ -64,5 +64,47 @@
     "type": "float",
     "default": 0.15,
     "hint": "0.15 表示约 15% 概率收藏"
+  },
+  "ai_enabled": {
+    "description": "AI 自动操作总开关：允许 Bot 通过 LLM 工具自动发布/搜索/互动小红书",
+    "type": "bool",
+    "default": true,
+    "hint": "关闭后 AI 只能查状态不能操作"
+  },
+  "ai_actions": {
+    "description": "AI 允许执行的动作（逗号分隔）：publish,search,interact,browse",
+    "type": "string",
+    "default": "publish,search,interact,browse",
+    "hint": "去掉某类即禁止 AI 执行该类动作"
+  },
+  "ai_talk_back": {
+    "description": "AI 操作后自动把结果播报回会话",
+    "type": "bool",
+    "default": true,
+    "hint": "开：AI 操作完主动说明结果"
+  },
+  "keepalive_enabled": {
+    "description": "进程级保活：浏览器崩溃/页面卡死时自动重启",
+    "type": "bool",
+    "default": true,
+    "hint": "建议开启，长时间稳定在线"
+  },
+  "keepalive_check_interval": {
+    "description": "保活探活间隔（秒）",
+    "type": "int",
+    "default": 120,
+    "hint": "最小 30 秒"
+  },
+  "nurture_auto": {
+    "description": "定时养号总开关：按间隔自动浏览推荐流养号",
+    "type": "bool",
+    "default": false,
+    "hint": "需同时开启浏览养号"
+  },
+  "nurture_interval": {
+    "description": "定时养号间隔（秒）",
+    "type": "int",
+    "default": 3600,
+    "hint": "最小 600 秒（10 分钟）"
   }
 }
