@@ -56,6 +56,162 @@
   .input-item small { color: #666; margin-left: 6px; }
   .mini { font-size: 11px; color: #666; margin-top: 4px; }
   @media (max-width: 720px) { .tools { grid-template-columns: 1fr; } }
+
+  /* ============================================================
+     v2.0 视觉升级层（小红书品牌风 · 覆盖式，不影响结构与逻辑）
+     ============================================================ */
+  :root{
+    --xhs:#ff2442; --xhs2:#ff5c5c; --xhs3:#ff8fa3;
+    --xbg:#0b0b0f; --xbg2:#121218; --xcard:rgba(255,255,255,.03);
+    --xline:rgba(255,255,255,.08); --xline2:rgba(255,255,255,.14);
+    --xtxt:#f2f2f5; --xtxt2:#9a9aa8; --xtxt3:#666675;
+  }
+  body{
+    background:var(--xbg); color:var(--xtxt);
+    background-image:
+      radial-gradient(1000px 520px at 85% -10%, rgba(255,36,66,.13), transparent 60%),
+      radial-gradient(800px 460px at -10% 110%, rgba(255,92,92,.07), transparent 55%),
+      radial-gradient(600px 340px at 50% 50%, rgba(255,36,66,.04), transparent 60%);
+    background-attachment:fixed;
+  }
+  body::before{
+    content:""; position:fixed; inset:0; z-index:-1; pointer-events:none;
+    background-image:
+      linear-gradient(rgba(255,255,255,.022) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,.022) 1px, transparent 1px);
+    background-size:42px 42px;
+    mask-image:radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 75%);
+    -webkit-mask-image:radial-gradient(ellipse 85% 65% at 50% 0%, #000 25%, transparent 75%);
+  }
+  .wrap{max-width:1140px}
+  header{
+    border-bottom:1px solid var(--xline);
+    background:rgba(18,18,24,.55);
+    backdrop-filter:blur(16px) saturate(1.2);
+    -webkit-backdrop-filter:blur(16px) saturate(1.2);
+    border-radius:14px; padding:14px 18px;
+    box-shadow:0 8px 30px rgba(0,0,0,.3);
+  }
+  header h1{font-size:18px; letter-spacing:.3px}
+  header h1 span{
+    background:linear-gradient(135deg, var(--xhs), var(--xhs3));
+    -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;
+  }
+  .badges{gap:8px}
+  .badge{
+    background:rgba(255,255,255,.04); border:1px solid var(--xline); color:var(--xtxt2);
+    backdrop-filter:blur(6px); transition:all .18s ease;
+  }
+  .badge.ok{color:#34e08c; border-color:rgba(52,224,140,.35); background:rgba(52,224,140,.08)}
+  .badge.err{color:var(--xhs); border-color:rgba(255,36,66,.4); background:rgba(255,36,66,.08)}
+  .badge.warn{color:#ffb545; border-color:rgba(255,181,69,.35); background:rgba(255,181,69,.08)}
+  .badge.go-console{
+    color:#fff; border-color:rgba(255,36,66,.5); background:linear-gradient(135deg, rgba(255,36,66,.25), rgba(255,92,92,.15));
+  }
+  .badge.go-console:hover{background:linear-gradient(135deg, rgba(255,36,66,.4), rgba(255,92,92,.25)); box-shadow:0 0 18px rgba(255,36,66,.3)}
+  .stage{
+    background:linear-gradient(170deg, #14141c, #0d0d13);
+    border:1px solid var(--xline); border-radius:16px;
+    box-shadow:0 16px 44px rgba(0,0,0,.45), 0 0 0 1px rgba(255,36,66,.06), 0 0 60px rgba(255,36,66,.05);
+  }
+  .stage .screen{border-radius:0; background:#000}
+  .stage .ph{color:var(--xtxt3); font-size:14px}
+  .stage .ph .dot{background:var(--xhs); box-shadow:0 0 14px var(--xhs)}
+  .stage .corner{
+    background:rgba(10,10,14,.78); border:1px solid var(--xline); color:var(--xtxt2);
+    backdrop-filter:blur(8px); border-radius:9px;
+  }
+  .toast{
+    background:rgba(24,24,32,.92); border:1px solid rgba(255,36,66,.45); color:#ff6b7f;
+    border-radius:12px; backdrop-filter:blur(10px);
+    box-shadow:0 12px 36px rgba(0,0,0,.55);
+  }
+  .tools{gap:16px; margin-top:16px}
+  .card{
+    background:linear-gradient(165deg, rgba(255,255,255,.045), rgba(255,255,255,.015));
+    border:1px solid var(--xline); border-radius:16px;
+    padding:18px; position:relative; overflow:hidden;
+    backdrop-filter:blur(10px);
+    transition:border-color .2s ease, transform .2s ease, box-shadow .2s ease;
+  }
+  .card::before{
+    content:""; position:absolute; top:0; left:0; right:0; height:1px;
+    background:linear-gradient(90deg, transparent, rgba(255,36,66,.5), transparent);
+  }
+  .card::after{
+    content:""; position:absolute; right:-40px; top:-40px; width:110px; height:110px;
+    border-radius:50%; background:radial-gradient(circle, rgba(255,36,66,.09), transparent 70%);
+    pointer-events:none;
+  }
+  .card:hover{border-color:var(--xline2); transform:translateY(-2px); box-shadow:0 14px 34px rgba(0,0,0,.32), 0 0 24px rgba(255,36,66,.05)}
+  .card h2{font-size:14.5px; position:relative; z-index:1}
+  .card h2 em{
+    font-style:normal; display:inline-flex; align-items:center; justify-content:center;
+    width:22px; height:22px; border-radius:7px; font-size:12px; font-weight:800;
+    color:#fff; background:linear-gradient(135deg, var(--xhs), #ff6b7f);
+    box-shadow:0 2px 10px rgba(255,36,66,.45);
+  }
+  .btn{
+    background:linear-gradient(135deg, var(--xhs), #ff5c5c);
+    border:none; border-radius:10px; color:#fff; font-weight:700;
+    box-shadow:0 4px 16px rgba(255,36,66,.3);
+    transition:all .18s ease; position:relative; overflow:hidden;
+  }
+  .btn:hover{filter:brightness(1.1); box-shadow:0 6px 22px rgba(255,36,66,.45); transform:translateY(-1px)}
+  .btn:active{transform:scale(.97)}
+  .btn::after{
+    content:""; position:absolute; left:-60%; top:0; bottom:0; width:36%;
+    background:linear-gradient(100deg, transparent, rgba(255,255,255,.32), transparent);
+    transform:skewX(-20deg); animation:btnShine 3.4s ease-in-out infinite;
+  }
+  @keyframes btnShine{0%,70%{left:-60%}100%{left:130%}}
+  .btn.ghost{
+    background:rgba(255,255,255,.04); color:var(--xtxt2); border:1px solid var(--xline);
+    box-shadow:none; font-weight:600;
+  }
+  .btn.ghost:hover{background:rgba(255,255,255,.08); color:var(--xtxt); border-color:var(--xline2); filter:none; transform:none; box-shadow:none}
+  .btn.small{border-radius:8px}
+  .tip{color:var(--xtxt3); font-size:12px}
+  .tip b{color:var(--xtxt2)}
+  textarea, input[type="text"], input[type="tel"]{
+    background:rgba(0,0,0,.35); border:1px solid var(--xline); border-radius:10px;
+    color:var(--xtxt); transition:border-color .2s, box-shadow .2s, background .2s;
+  }
+  textarea:focus, input:focus{border-color:var(--xhs); box-shadow:0 0 0 3px rgba(255,36,66,.12), 0 0 18px rgba(255,36,66,.08); background:rgba(255,36,66,.03)}
+  .row{gap:10px}
+  .status-line{color:var(--xtxt3); font-size:12.5px; padding:10px 4px}
+  .status-line b{color:var(--xtxt)}
+  .tabs{gap:8px}
+  .tab{
+    background:rgba(255,255,255,.04); border:1px solid var(--xline); color:var(--xtxt2);
+    border-radius:10px; font-weight:600; transition:all .18s ease;
+  }
+  .tab:hover{border-color:rgba(255,36,66,.4); color:var(--xtxt)}
+  .tab.active{
+    background:linear-gradient(135deg, rgba(255,36,66,.2), rgba(255,92,92,.1));
+    border-color:var(--xhs); color:#ff6b7f;
+    box-shadow:0 0 16px rgba(255,36,66,.18);
+  }
+  .step{color:var(--xtxt3)}
+  .step b{
+    display:inline-flex; align-items:center; justify-content:center;
+    min-width:18px; height:18px; padding:0 4px; border-radius:5px; font-size:11px;
+    color:#fff; background:linear-gradient(135deg, var(--xhs), #ff6b7f);
+    box-shadow:0 2px 8px rgba(255,36,66,.35);
+  }
+  .input-item{
+    background:rgba(255,255,255,.03); border:1px solid var(--xline); color:var(--xtxt2);
+    border-radius:8px; transition:all .15s ease;
+  }
+  .input-item:hover{border-color:var(--xhs); color:var(--xtxt); background:rgba(255,36,66,.06)}
+  .input-item.sel{border-color:#34e08c; color:#34e08c; background:rgba(52,224,140,.08)}
+  .mini{color:var(--xtxt3)}
+  ::-webkit-scrollbar{width:8px;height:8px}
+  ::-webkit-scrollbar-thumb{background:linear-gradient(180deg, #2a2a34, #1d1d26); border-radius:6px}
+  ::-webkit-scrollbar-thumb:hover{background:linear-gradient(180deg, #3a3a48, #2a2a34)}
+  @media (prefers-reduced-motion: reduce){
+    *,*::before,*::after{animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important}
+  }
 </style>
 </head>
 <body>
@@ -140,6 +296,31 @@
         从电脑/手机浏览器登录小红书网页版后，在开发者工具 Console 执行 <b>document.cookie</b> 复制全部内容粘贴到这里。<br>
         注：HttpOnly 字段（如 web_session）用 document.cookie 拿不全，优先用扫码/短信通道。
       </div>
+    </div>
+
+    <div class="card" style="grid-column:1/-1">
+      <h2><em>⚙</em> 自动化设置（AI 代操作 / 保活 / 定时养号）</h2>
+      <div class="row" style="flex-wrap:wrap;gap:8px;align-items:center">
+        <label style="display:flex;align-items:center;gap:6px;margin-right:14px;cursor:pointer"><input type="checkbox" id="aiEnabled" style="width:auto"> AI 自动操作（允许 Bot 用 LLM 工具代发笔记/搜索/互动）</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer"><input type="checkbox" id="aiTalkBack" style="width:auto"> AI 操作后自动播报结果</label>
+      </div>
+      <div class="mini" style="margin:8px 0 2px">AI 允许执行的动作：</div>
+      <div class="row" style="flex-wrap:wrap;gap:8px">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="act_publish" style="width:auto"> 发布笔记</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="act_search" style="width:auto"> 搜索/看内容</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="act_interact" style="width:auto"> 点赞/收藏/评论/关注</label>
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="act_browse" style="width:auto"> 浏览养号</label>
+      </div>
+      <div class="row" style="flex-wrap:wrap;gap:8px;margin-top:8px;align-items:center">
+        <label style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="keepaliveEnabled" style="width:auto"> 进程级保活（浏览器挂掉自动拉起）</label>
+        <span style="display:flex;align-items:center;gap:4px">间隔 <input type="number" id="keepaliveInterval" min="30" step="10" style="width:80px"> 秒</span>
+        <label style="display:flex;align-items:center;gap:5px;margin-left:10px;cursor:pointer"><input type="checkbox" id="nurtureAuto" style="width:auto"> 定时养号</label>
+        <span style="display:flex;align-items:center;gap:4px">每 <input type="number" id="nurtureInterval" min="600" step="300" style="width:90px"> 秒</span>
+      </div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn" id="btnSaveCfg">保存自动化设置</button>
+      </div>
+      <div class="tip">AI 自动操作开启后，对 Bot 说“帮我发条小红书”即可由 AI 代发图文；保活会定期探活浏览器，崩溃自动重启；定时养号按间隔自动浏览推荐流降低风控。</div>
     </div>
   </div>
 
@@ -373,7 +554,7 @@
       });
       var it = inputsCache[index] || {};
       var tip = $("focusTip");
-      tip.innerHTML = "✅ 已聚焦第 " + (index + 1) + " 个输入框" + (it.placeholder ? "「" + esc(it.placeholder) + "」" : "") + "，在下面输入文字点「输入」";
+      tip.innerHTML = "✅ 已聚焦第 " + (index + 1) + " 个输入框" + (it.placeholder ? "「" + esc(it.placeholder) + "」" : "") + "，在画面输入文字点「输入」";
       tip.style.color = "#25f4ee";
       toast("已聚焦输入框 " + (index + 1), true);
     } else {
@@ -513,6 +694,44 @@
     });
   });
 
+
+  // ── 自动化设置：加载 / 保存 ──────────────────────────────
+  function setCfgVal(id, v, isBool) { var el = $(id); if (!el) return; if (isBool) el.checked = !!v; else el.value = (v === undefined || v === null) ? "" : v; }
+  function getCfgVal(id, isBool) { var el = $(id); if (!el) return undefined; return isBool ? el.checked : el.value; }
+  function loadAutoCfg() {
+    api("/config").then(function (r) {
+      if (!r) return;
+      setCfgVal("aiEnabled", r.ai_enabled, true);
+      var acts = (r.ai_actions || "publish,search,interact,browse").split(",");
+      ["publish","search","interact","browse"].forEach(function (a) { var el = $("act_" + a); if (el) el.checked = acts.indexOf(a) >= 0; });
+      setCfgVal("aiTalkBack", r.ai_talk_back, true);
+      setCfgVal("keepaliveEnabled", r.keepalive_enabled, true);
+      setCfgVal("keepaliveInterval", r.keepalive_check_interval, false);
+      setCfgVal("nurtureAuto", r.nurture_auto, true);
+      setCfgVal("nurtureInterval", r.nurture_interval, false);
+    }).catch(function () {});
+  }
+  var btnSave = $("btnSaveCfg");
+  if (btnSave) btnSave.addEventListener("click", function () {
+    var b = this; b.disabled = true; b.textContent = "保存中…";
+    var acts = [];
+    ["publish","search","interact","browse"].forEach(function (a) { var el = $("act_" + a); if (el && el.checked) acts.push(a); });
+    api("/config", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({
+      ai_enabled: !!getCfgVal("aiEnabled", true),
+      ai_actions: acts.join(",") || "none",
+      ai_talk_back: !!getCfgVal("aiTalkBack", true),
+      keepalive_enabled: !!getCfgVal("keepaliveEnabled", true),
+      keepalive_check_interval: parseInt(getCfgVal("keepaliveInterval", false) || "120", 10),
+      nurture_auto: !!getCfgVal("nurtureAuto", true),
+      nurture_interval: parseInt(getCfgVal("nurtureInterval", false) || "3600", 10)
+    }) }).then(function (r) {
+      toast(r && r.ok ? (r.message || "配置已保存") : ((r && r.message) || "保存失败"), !!(r && r.ok));
+      if (r && r.ok) loadAutoCfg();
+    }).catch(function () { toast("请求失败", false); }).finally(function () {
+      b.disabled = false; b.textContent = "保存自动化设置";
+    });
+  });
+  loadAutoCfg();
   setInterval(function () { refreshShot(false); }, 2000);
   setInterval(pollStatus, 4000);
   pollStatus();
